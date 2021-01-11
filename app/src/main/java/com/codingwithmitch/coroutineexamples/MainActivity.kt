@@ -42,12 +42,21 @@ class MainActivity : AppCompatActivity() {
      */
     private suspend fun fakeApiRequest() {
         withContext(IO) {
-
+            println("debug: start")
             val job1 = launch {
                 val time1 = measureTimeMillis {
                     println("debug: launching job1 in thread: ${Thread.currentThread().name}")
-                    val result1 = getResult1FromApi()
-                    setTextOnMainThread("Got $result1")
+                    var result1 = getResult1FromApi()
+                    setTextOnMainThread("job1: Got $result1")
+
+                    var result2 = getResult2FromApi()
+                    setTextOnMainThread("job1: Got $result2")
+
+                    result1 = getResult1FromApi()
+                    setTextOnMainThread("job1: Got $result1")
+
+                    result2 = getResult2FromApi()
+                    setTextOnMainThread("job1: Got $result2")
                 }
                 println("debug: compeleted job1 in $time1 ms.")
             }
@@ -56,16 +65,25 @@ class MainActivity : AppCompatActivity() {
                 val time2 = measureTimeMillis {
                     println("debug: launching job2 in thread: ${Thread.currentThread().name}")
                     val result2 = getResult2FromApi()
-                    setTextOnMainThread("Got $result2")
+                    setTextOnMainThread("job2: Got $result2")
                 }
                 println("debug: compeleted job2 in $time2 ms.")
             }
 
+//            var result = ""
+//            val job = launch {
+//                println("debug: job is started")
+//                result = getResult1FromApi()
+//            }.join()
+//            println("debug: result = $result")
+
+
+            println("debug: end")
         }
     }
 
     private suspend fun getResult1FromApi(): String {
-        delay(1000)
+        delay(2000)
         return "Result #1"
     }
 
