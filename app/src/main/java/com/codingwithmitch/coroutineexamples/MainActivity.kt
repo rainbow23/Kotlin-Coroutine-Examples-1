@@ -6,9 +6,11 @@ import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
+import kotlin.system.measureTimeMillis
 
 
 class MainActivity : AppCompatActivity() {
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -18,58 +20,123 @@ class MainActivity : AppCompatActivity() {
             setNewText("Click!")
 
             CoroutineScope(IO).launch {
-                fakeApiRequest()
+                println("debug: Launching coroutine: $this")
+                var result = fakeApiRequest()
+
+                // waits until all jobs in coroutine scope are complete to return result
+                println("debug: result: ${result}")
+                setNewText(result)
+
+                result = fakeApiRequest2()
+                println("debug: await result: ${result}")
+                setNewText(result)
+
+
             }
+
         }
-        
+
     }
 
     private fun setNewText(input: String){
-        val newText = text.text.toString() + "\n$input"
-        text.text = newText
-    }
-    private suspend fun setTextOnMainThread(input: String) {
-        withContext (Main) {
-            setNewText(input)
+        GlobalScope.launch(Main){
+            val newText = text.text.toString() + "\n$input"
+            text.text = newText
         }
     }
 
-    private suspend fun fakeApiRequest() {
-        logThread("fakeApiRequest")
+    private suspend fun fakeApiRequest(): String{
 
-        val result1 = getResult1FromApi() // wait until job is done
+        var timeElapsed = 0L
+        withContext(IO) {
 
-        if ( result1.equals("Result #1")) {
+            val time = measureTimeMillis {
 
-            setTextOnMainThread("Got $result1")
+                val job1 = launch {
+                    println("debug: starting job 1 ${Thread.currentThread().name}")
+                    delay(1000)
+                    println("debug: done job 1 ${Thread.currentThread().name}")
+                }
 
-            val result2 = getResult2FromApi() // wait until job is done
+                val job2 = launch {
+                    println("debug: staring job 2 ${Thread.currentThread().name}")
+                    delay(2500)
+                    println("debug: done job 2 ${Thread.currentThread().name}")
+                }
 
-            if (result2.equals("Result #2")) {
-                setTextOnMainThread("Got $result2")
-            } else {
-                setTextOnMainThread("Couldn't get Result #2")
+                val job3 = launch {
+                    println("debug: starting job 3 ${Thread.currentThread().name}")
+                    delay(1000)
+                    println("debug: done job 3 ${Thread.currentThread().name}")
+                }
+                job1.join()
+                job2.join()
+                job3.join()
             }
-        } else {
-            setTextOnMainThread("Couldn't get Result #1")
+            timeElapsed = time
+            println("debug: elapsed time: ${timeElapsed}")
         }
+        return "Jobs completed within $timeElapsed ms."
     }
 
+    private suspend fun fakeApiRequest2(): String {
+        var timeElapsed = 0L
+        withContext(IO) {
 
-    private suspend fun getResult1FromApi(): String {
-        logThread("getResult1FromApi")
-        delay(1000) // Does not block thread. Just suspends the coroutine inside the thread
-        return "Result #1"
-    }
+            val time = measureTimeMillis {
 
-    private suspend fun getResult2FromApi(): String {
-        logThread("getResult2FromApi")
-        delay(1000)
-        return "Result #2"
-    }
+                val job1 = async {
+                    println("debug: starting job 1 ${Thread.currentThread().name}")
+                    delay(1000)
+                    println("debug: done job 1 ${Thread.currentThread().name}")
+                }
 
-    private fun logThread(methodName: String){
-        println("debug: ${methodName}: ${Thread.currentThread().name}")
+                val job2 = async {
+                    println("debug: staring job 2 ${Thread.currentThread().name}")
+                    delay(2500)
+                    println("debug: done job 2 ${Thread.currentThread().name}")
+                }
+
+                val job3 = async {
+                    println("debug: starting job 3 ${Thread.currentThread().name}")
+                    delay(1000)
+                    println("debug: done job 3 ${Thread.currentThread().name}")
+                }
+                job1.await()
+                job2.await()
+                job3.await()
+            }
+            timeElapsed = time
+            println("debug: await elapsed time: ${timeElapsed}")
+        }
+        return "Jobs await completed within $timeElapsed ms."
     }
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
