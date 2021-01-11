@@ -52,6 +52,8 @@ class MainActivity : AppCompatActivity() {
                 }
                 Log.e(TAG, "${job} was cancelled. Reason: ${msg}")
                 showToast(msg)
+                job_progress_bar.progress = PROGRESS_START
+
             }
         }
         job_progress_bar.max = PROGRESS_MAX
